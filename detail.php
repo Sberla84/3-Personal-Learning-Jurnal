@@ -1,5 +1,6 @@
 <?php
 include('inc/header.php');
+include('inc/functions.php');
 
 if(!empty($_GET['id'])){
     $entry_id = intval($_GET['id']);
@@ -17,13 +18,20 @@ try{
 }
 
 $entry = $result->fetch(PDO::FETCH_ASSOC);
-var_dump($entry);
+
+if (isset($_POST['delete'])) {
+    if (delete_entry(filter_input(INPUT_POST, 'delete', FILTER_SANITIZE_NUMBER_INT)));
+    header('location: index.php?msg=Entry+Deleted');
+    exit; 
+} 
+
+
 
 ?>
                 <div class="entry-list single">
                     <article>
                         <h1><?php echo $entry['title']; ?></h1>
-                        <time datetime="<?php echo $entry['date'];?>"><?php echo date('F d, Y', $entrie['date']);?></time>
+                        <time datetime="<?php echo $entry['date'];?>"><?php echo date('F d, Y', $entry['date']);?></time>
                         <div class="entry">
                             <h3>Time Spent: </h3>
                             <p><?php echo $entry['time_spent'];?></p>
@@ -34,18 +42,35 @@ var_dump($entry);
                         </div>
                         <div class="entry">
                             <h3>Resources to Remember:</h3>
-                            <ul>
-                                <li><a href=""><?php echo $entry['resource'];?></a></li>
-                                <li><a href="">Cras accumsan cursus ante, non dapibus tempor</a></li>
-                                <li>Nunc ut rhoncus felis, vel tincidunt neque</li>
-                                <li><a href="">Ipsum dolor sit amet</a></li>
-                            </ul>
+                            <?php
+                                if (!empty($entry['resources'])) {
+                                    echo "<ul>";
+                                    foreach (explode(',', $entry['resources']) as $ent) {
+                                        if (stripos(trim($ent), 'http://') === 0 or stripos(trim($ent), 'https://') === 0) {
+                                            echo "<li><a href='" . strtolower(trim($ent)) . "' target='_blank'>" . strtolower(trim($ent)) . "</a></li>";
+                                        } else {
+                                            echo "<li>" . trim($ent) . "</li>";
+                                        }
+                                    }
+                                    echo "</ul>";
+                                }
+                            ?>
+                        </div>
+                        <div class="entry">
+                            <h3>Tags:</h3>
+                            <p><?php echo $entry['tags'];?></p>
                         </div>
                     </article>
                 </div>
             </div>
             <div class="edit">
                 <p><a href="edit.php?id=<?php echo $entry['id'];?>">Edit Entry</a></p>
+                <?php 
+                                              echo " <form method='post' action='detail.php' onsubmit='return confirm(\"Are you sure you want to delete this entry?\")'>\n";
+                                              echo "<input type='hidden' name='delete' value='".$entry['id']."'/>\n";
+                                              echo '<input type="submit" value="Delete Entry" class="button">';
+                                              echo " </form>";                    
+                ?>
             </div>
         </section>
         <footer>
